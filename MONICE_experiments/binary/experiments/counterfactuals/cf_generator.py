@@ -4,7 +4,7 @@ from experiments.core.data_preprocessing import PreprocessorBuilder
 from experiments.models.autoencoder_trainer import AutoencoderTrainer
 from experiments.models.classification_trainer import SklearnTabularModeler
 from experiments.counterfactuals.cf_wrapper import MoniceMultiObjectiveGowerWrapper, MoniceMultiObjectiveHEOMWrapper, MoniceSparsProxWrapper, MoniceProxPlausWrapper, MoniceSparsPlausWrapper, \
-    DiceRandomWrapper, CFProtoWrapper, GecoWrapper, \
+    DiceRandomWrapper, DiceExtendedWrapper, CFProtoWrapper, GecoWrapper, \
     NiceNoneWrapper, NiceSparsityWrapper, NiceProximityWrapper, NicePlausibilityWrapper, \
     LIMECounterfactualWrapper, MOCWrapper
 
@@ -30,6 +30,7 @@ CF_WRAPPERS = {
     
     'moc': MOCWrapper,
     'dicerandom': DiceRandomWrapper,
+    'diceextended': DiceExtendedWrapper,
     'cfproto': CFProtoWrapper,
     'geco': GecoWrapper,
 
@@ -49,6 +50,7 @@ N_CF = {
     
     'moc': 6,
     'dicerandom': 6,
+    'diceextended': 6,
     'geco': 6,
     'lime': 1,
     

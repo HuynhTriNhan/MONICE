@@ -25,6 +25,7 @@ N_CF = {
     
     'moc': 6,
     'dicerandom': 6,
+    'diceextended': 6,
     'geco': 6,
     'lime': 1,
     
@@ -113,7 +114,7 @@ class ResultReader:
                 if self._is_valid_cf(cf_instance):
                     if modeler is None or self._is_valid_prediction(original, cf_instance, modeler):
                         valid_cfs.append(cf_instance)
-        
+                        
         return {
             'original': original,
             'valid_cfs': valid_cfs,
@@ -140,7 +141,7 @@ class ResultReader:
         
         # Preprocess results
         modeler = None
-        if dataset_name != "mushroom" or cf_name not in ["geco", "cfproto"]:
+        if dataset_name != "mushroom" or cf_name not in ["geco", "cfproto", "diceextended"]:
             try:
                 modeler = SklearnTabularModeler(dataset_name, model)
                 modeler.load()
@@ -148,7 +149,7 @@ class ResultReader:
                 print(f"Warning: Could not load model for {dataset_name}-{model}")
         
         preprocessed_results = []
-        for result in results:
+        for i,result in enumerate(results):
             preprocessed_result = self._preprocess_result(result, modeler)
             preprocessed_results.append(preprocessed_result)
         
@@ -172,7 +173,7 @@ class ResultReader:
         
     def calculate_coverage(self, results: List[Dict[str, Any]], dataset_name: str = None, cf_name: str = None) -> float:
         """Calculate coverage percentage (non-NaN counterfactuals)"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         valid_count = sum(1 for result in results if result['valid_cfs_count'] > 0)
@@ -180,7 +181,7 @@ class ResultReader:
     
     def calculate_time(self, results: List[Dict[str, Any]], dataset_name: str = None, cf_name: str = None) -> float:
         """Calculate average time for cases with valid counterfactuals"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         times = [result['time'] for result in results if result['valid_cfs_count'] > 0]
@@ -188,7 +189,7 @@ class ResultReader:
     
     def calculate_valid_cf(self, results: List[Dict[str, Any]], dataset_name: str = None, cf_name: str = None) -> float:
         """Calculate percentage of valid cf"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         expected_n_cf = N_CF[cf_name] * len(results)
@@ -198,7 +199,7 @@ class ResultReader:
     
     def calculate_sparsity(self, results: List[Dict[str, Any]], dataset_name: str = None, cf_name: str = None) -> float:
         """Calculate average L0 distance (number of changed features)"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         sparsities = []
@@ -211,7 +212,7 @@ class ResultReader:
     
     def calculate_gower_distance(self, results: List[Dict[str, Any]], dataset_name: str, cf_name: str) -> float:
         """Calculate average Gower (L1) distance"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         distances = []
@@ -226,7 +227,7 @@ class ResultReader:
     
     def calculate_heom_distance(self, results: List[Dict[str, Any]], dataset_name: str, cf_name: str) -> float:
         """Calculate average HEOM (L2) distance"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         distances = []
@@ -241,7 +242,7 @@ class ResultReader:
     
     def calculate_ae_loss(self, results: List[Dict[str, Any]], dataset_name: str, cf_name: str) -> float:
         """Calculate average autoencoder loss"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         autoencoder = AutoencoderTrainer(dataset_name)
@@ -255,7 +256,7 @@ class ResultReader:
             
     def calculate_5NN_distance(self, results: List[Dict[str, Any]], dataset_name: str, cf_name: str) -> float:
         """Calculate average distance to 5 nearest neighbors"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         distances = []
@@ -270,7 +271,7 @@ class ResultReader:
 
     def calculate_IM1(self, results: List[Dict[str, Any]], dataset_name: str, model: str, cf_name: str) -> float:
         """Calculate IM1 interpretability metric"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         modeler = SklearnTabularModeler(dataset_name, model)
@@ -292,7 +293,7 @@ class ResultReader:
 
     def calculate_IM2(self, results: List[Dict[str, Any]], dataset_name: str, model: str, cf_name: str) -> float:
         """Calculate IM2 interpretability metric"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         modeler = SklearnTabularModeler(dataset_name, model)
@@ -314,7 +315,7 @@ class ResultReader:
 
     def calculate_diversity(self, results: List[Dict[str, Any]], dataset_name: str, cf_name: str) -> float:
         """Calculate diversity between counterfactuals"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         diversities = []
@@ -334,7 +335,7 @@ class ResultReader:
 
     def calculate_confidence(self, results: List[Dict[str, Any]], dataset_name: str, model: str, cf_name: str) -> float:
         """Calculate average confidence (max probability) of counterfactual predictions"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         modeler = SklearnTabularModeler(dataset_name, model)
@@ -353,7 +354,7 @@ class ResultReader:
 
     def calculate_entropy(self, results: List[Dict[str, Any]], dataset_name: str, model: str, cf_name: str) -> float:
         """Calculate average entropy of counterfactual prediction probability distributions"""
-        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto"]:
+        if dataset_name == "mushroom" and cf_name in ["geco", "cfproto", "diceextended"]:
             return np.nan
             
         modeler = SklearnTabularModeler(dataset_name, model)

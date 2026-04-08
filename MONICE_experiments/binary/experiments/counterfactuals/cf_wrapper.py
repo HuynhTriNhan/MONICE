@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 import dice_ml
+import dice_ml_x
 from nice import NICE
 from scipy import stats
 from monice import MONICE, AutoencoderPlausibility
@@ -77,7 +78,7 @@ class MoniceMultiObjectiveHEOMWrapper(CounterfactualWrapper):
                 X=x,
                 target_classes='other',
                 optimization=['robustness', 'sparsity', 'proximity', 'plausibility'],
-                k_nearest=6,
+                k_nearest=5,
                 n_cfs=6,
                 numerical_steps=[0.2, 0.4, 0.6, 0.8, 1.0]
             )
@@ -94,7 +95,7 @@ class MoniceMultiObjectiveGowerWrapper(MoniceWrapper):
                 X=x,
                 target_classes='other',
                 optimization=['robustness', 'sparsity', 'proximity', 'plausibility'],
-                k_nearest=6,
+                k_nearest=5,
                 n_cfs=6,
                 numerical_steps=[0.2, 0.4, 0.6, 0.8, 1.0]
             )
@@ -111,7 +112,7 @@ class MoniceSparsProxWrapper(MoniceWrapper):
                 X=x,
                 target_classes='other',
                 optimization=['sparsity', 'proximity'],
-                k_nearest=6,
+                k_nearest=5,
                 n_cfs=6,
                 numerical_steps=[0.2, 0.4, 0.6, 0.8, 1.0]
             )
@@ -129,7 +130,7 @@ class MoniceSparsPlausWrapper(MoniceWrapper):
             X=x,
             target_classes='other',
             optimization=['sparsity', 'plausibility'],
-            k_nearest=6,
+            k_nearest=5,
             n_cfs=6,
             numerical_steps=[0.2, 0.4, 0.6, 0.8, 1.0]
             )
@@ -148,7 +149,7 @@ class MoniceProxPlausWrapper(MoniceWrapper):
                 X=x,
                 target_classes='other',
                 optimization=['proximity', 'plausibility'],
-                k_nearest=6,
+                k_nearest=5,
                 n_cfs=6,
                 numerical_steps=[0.2, 0.4, 0.6, 0.8, 1.0]
             )
@@ -175,6 +176,36 @@ class DiceRandomWrapper(CounterfactualWrapper):
 
     def explain(self,x):
         df_x = pd.DataFrame(x, columns= self.feature_names[:-1])
+        start = time()
+        try:
+            e1 = self.explainer.generate_counterfactuals(df_x, total_CFs=self.n, desired_class='opposite',verbose= False)
+            explanation = e1.cf_examples_list[0].final_cfs_df.iloc[:,:-1].values
+        except Exception as e:
+            print(e)
+            explanation = np.tile(np.nan,(self.n, x.shape[1]))
+        run_time = time()-start
+        if explanation.shape[0]<self.n:
+            missing= np.tile(np.nan,(self.n-explanation.shape[0],x.shape[1]))
+            explanation = np.concatenate((explanation,missing),axis=0)
+        return explanation, run_time
+    
+class DiceExtendedWrapper(CounterfactualWrapper):
+    def __init__(self,dataset,model, **kwargs):
+        self.n = 6
+        Xy = np.concatenate((dataset.X_train,dataset.y_train[:,np.newaxis]), axis= 1)
+        Xy_test = np.concatenate((dataset.X_test,dataset.y_test[:,np.newaxis]), axis= 1)
+        Xy = np.concatenate((Xy,Xy_test),axis=0)
+        self.feature_names = dataset.feature_names + ['y']
+        df = pd.DataFrame(Xy,columns= self.feature_names)
+        con_feat = [dataset.feature_names[i] for i in dataset.continuous_indices]
+
+        self.d = dice_ml_x.Data(dataframe = df, continuous_features = con_feat, outcome_name = 'y')
+        self.m = dice_ml_x.Model(model = model, backend='sklearn')
+        self.explainer = dice_ml_x.Dice(self.d, self.m, method='genetic')
+
+    def explain(self,x):
+        df_x = pd.DataFrame(x, columns= self.feature_names[:-1])
+        print(df_x.shape)
         start = time()
         try:
             e1 = self.explainer.generate_counterfactuals(df_x, total_CFs=self.n, desired_class='opposite',verbose= False)
